@@ -1,1 +1,1 @@
-# nuclei-templates-2025hw
+# nuclei-templates-2025HVV
