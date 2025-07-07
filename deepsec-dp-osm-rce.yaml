@@ -8,6 +8,7 @@ requests:
   - method: POST
     path:
       - "/fort/portal_login"
+    Host: {{Hostname}}
     headers:
       Cookie: "FORTSESSIONID=78DFD83A276124B65ECA5D316D66D47F"
       User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:131.0) Gecko/20100101 Firefox/131.0"
